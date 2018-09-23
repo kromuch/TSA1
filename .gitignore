@@ -1,2 +1,9 @@
-*.class
-*.log
+.idea
+*.iml
+target
+logs
+project/target
+target
+*.ipr
+*.iws
+*.tsv
