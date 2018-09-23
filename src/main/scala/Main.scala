@@ -12,26 +12,9 @@ import PlotsHandler._
 import akka.util.Timeout
 import akka.http.scaladsl.marshallers.xml.ScalaXmlSupport._
 
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
-object Main extends App {
-  implicit val system: ActorSystem = ActorSystem()
-  implicit val materializer: ActorMaterializer = ActorMaterializer()
-  // needed for the future flatMap/onComplete in the end
-  implicit val executionContext: ExecutionContextExecutor = system.dispatcher
-  implicit val timeout: Timeout = 5.seconds
-
-
-  val plotsHandler = system.actorOf(Props(new PlotsHandler))
-
-  val noHTMLByName = "No any plot by this name was found"
-
-  val configPath = "C:\\Users\\kromu\\Documents\\MEGAsync\\Навчання\\4 курс\\" +
-  "АЧР\\Л1\\ATS_Lab_01_new\\ATS_Lab_01_new\\Test+\\"
-
-  val labConfig = new LabConfig(new File(configPath + "test.txt"),
-    new File(configPath + "arkc.txt"))
+object Main extends App with InitHelper {
 
   println(labConfig.toString)
 
@@ -43,10 +26,10 @@ object Main extends App {
         Map("country" -> "DK", "population" -> 80, "averageHeight" -> 8)
       )
     ).withLayers(
-//      Layer().
-//        mark(Line).
-//        encodeX("country", Nom).
-//        encodeY("population", Quant),
+    Layer().
+      mark(Point).
+      encodeX("country", Nom).
+      encodeY("population", Quant),
       Layer().
         mark(Area).
         encodeX("country", Nom).
@@ -67,7 +50,7 @@ object Main extends App {
         }
       }
     } ~ pathPrefix("plots" / Segment) { name =>
-      val f = akka.pattern.ask(plotsHandler, GetPlotByName(name)).mapTo[Option[HTML]]
+      val f = akka.pattern.ask(plotsHandler, GetPlotByName(java.net.URLDecoder.decode(name))).mapTo[Option[HTML]]
       onSuccess(f) {optionHTML =>
         complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, optionHTML.getOrElse(noHTMLByName)))
       }

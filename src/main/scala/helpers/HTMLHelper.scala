@@ -8,7 +8,7 @@ object HTMLHelper {
     Seq(<html>
     <h1>Available plots:</h1><br></br>
     {plotNames.map{name =>
-      <h2><a href={s"/plots/$name"} target="_blank">{name}</a></h2><br></br>
+      <h2><a href={s"/plots/${java.net.URLEncoder.encode(name)}"} target="_blank">{name}</a></h2><br></br>
     }}
     </html>)
   }
