@@ -16,7 +16,7 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
 
 object Main extends App with InitHelper {
 
-  println(labConfig.toString)
+//  println(labConfig.toString)
 
   val plot = Vegas.layered("Country Pop").
     withData(
@@ -27,14 +27,15 @@ object Main extends App with InitHelper {
       )
     ).withLayers(
     Layer().
-      mark(Point).
+      mark(Line).
       encodeX("country", Nom).
-      encodeY("population", Quant),
-      Layer().
-        mark(Area).
-        encodeX("country", Nom).
-//        encodeY("population", Quant).
-        encodeY("averageHeight", Quant)
+      encodeY("population", Quant)
+//      .encodeColor("population", Quant)
+//      Layer().
+//        mark(Area).
+//        encodeX("country", Nom).
+////        encodeY("population", Quant).
+//        encodeY("averageHeight", Quant)
     )
 
   val testPlot = plot.html.pageHTML()
