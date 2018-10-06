@@ -19,8 +19,7 @@ trait InitHelper {
 
   val noHTMLByName = "No any plot by this name was found"
 
-  val configPath: String = "C:\\Users\\kromu\\Documents\\MEGAsync\\Навчання\\4 курс\\" +
-    "АЧР\\Л1\\ATS_Lab_01_new\\ATS_Lab_01_new\\Test+\\"
+  val configPath: String = "C:\\Users\\kromu\\Documents\\MEGAsync\\Навчання\\4 курс\\АЧР\\Л1\\Test+\\"
 
   val labConfig = new LabConfig(new File(configPath + "test.txt"),
     new File(configPath + "arkc.txt"),

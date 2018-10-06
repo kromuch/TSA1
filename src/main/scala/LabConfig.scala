@@ -101,7 +101,7 @@ class LabConfig(file: File, arkcFile: File, yFile: File, vFile: File) {
   mnkYWriter.close()
 
   val additionalDebugWriter = new BufferedWriter(new FileWriter(s"debugC.txt"))
-  additionalDebugWriter.write(s"p\tq\tMNK e\tRMNK e\tdevMNK\tdevRMNK\tIKA MNK\tIKA RMNK\n")
+  additionalDebugWriter.write(s"p\tq\tMNK e\tdevMNK\tIKA MNK\tRMNK e\tdevRMNK\tIKA RMNK\n")
   arkc/*List(3 -> 1)*/.foreach{case (p, q) =>
     val newAs = as.take(p + 1)
     val newBses = bses.take(q + 1)
@@ -145,20 +145,26 @@ class LabConfig(file: File, arkcFile: File, yFile: File, vFile: File) {
     println("---------------------------------------------------------------------")
     val yDenseVector: DenseVector[Double] = DenseVector(yForMNK.toArray)
 
-    val (rmnk, debug, rmnkE, yVzhuhs) = RMNK.rmnk(yDenseVector, vDenseVector, p, q, yForMNK.length - 1)
+    val (rmnk, debug, rmnkEFFF, yVzhuhs) = RMNK.rmnk(yDenseVector, vDenseVector, p, q, yForMNK.length - 1)
 
 
     val devFromRMNK: Double = variance(yVzhuhs)
     val devFromMNK: Double = variance(generatedYMNK)
 
     println(s"Calculated teta [RMNK]_${p}_$q:")
+    val generatedYRMNK = Common.calculateY(rmnk.data.toList, 100, p, q, vList)
+    val rmnkE = generatedYRMNK.zip(yForMNK).foldLeft(0.0){case (zero, (a,b)) =>
+      zero + math.pow(a-b, 2)
+    }
+
+
 
     val rmnkData = rmnk.data
-    val rmnkAs = rmnkData.take(p)
+    val rmnkAs = rmnkData.take(p+1)
     val rmnkBses = rmnkData.takeRight(q)
 
     rmnkAs.zipWithIndex.foreach{case (a, index) =>
-      println(s"a${index+1}: $a")
+      println(s"a$index: $a")
     }
 
     rmnkBses.zipWithIndex.foreach{case (b, index) =>
@@ -181,7 +187,7 @@ class LabConfig(file: File, arkcFile: File, yFile: File, vFile: File) {
       debugWriter2.newLine()
     }
     debugWriter2.close()
-    additionalDebugWriter.write(s"$p\t$q\t$mnkE\t$rmnkE\t$devFromMNK\t$devFromRMNK\t$IKA_MNK\t$IKA_RMNK\n")
+    additionalDebugWriter.write(s"$p\t$q\t$mnkE\t$devFromMNK\t$IKA_MNK\t$rmnkE\t$devFromRMNK\t$IKA_RMNK\n")
     println("================================================")
   }
   additionalDebugWriter.close()
