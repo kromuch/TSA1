@@ -5,7 +5,7 @@ object MNK {
   def mnk(X: DenseMatrix[Double], Y: DenseVector[Double]): DenseVector[Double] = {
     val Xt = X.t
     val t = (Xt * X) \ Xt
-    println(s"MNK debug: Y size: ${Y.length} Xt cols: ${t.cols}")
+//    println(s"MNK debug: Y size: ${Y.length} Xt cols: ${t.cols}")
     t*DenseVector(Y.data.takeRight(t.cols))
   }
 

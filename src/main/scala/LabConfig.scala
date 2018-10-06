@@ -41,37 +41,37 @@ class LabConfig(file: File, arkcFile: File, yFile: File, vFile: File) {
 
   val vList: List[Double] = Source.fromFile(vFile).getLines().map(_.toDouble).toList
   val vDenseVector: DenseVector[Double] = DenseVector(vList.toArray)
-  val yList: List[Double] = Source.fromFile(yFile).getLines().map(_.toDouble).toList
+//  val yList: List[Double] = Source.fromFile(yFile).getLines().map(_.toDouble).toList
 
-  val N: Int = math.min(yList.length, vList.length)
+//  val N: Int = math.min(yList.length, vList.length)
 
-  val plotY: LayerSpecBuilder = Vegas.layered("Country Pop").
-    withData(
-      yList.zipWithIndex.map{case (value, index) =>
-          Map("value" -> value, "index" -> index)
-      }
-    ).withLayers(
-    Layer().
-      mark(Line).
-      encodeY("value", Quant).
-      encodeX("index", Nom)
-  )
+//  val plotY: LayerSpecBuilder = Vegas.layered("Country Pop").
+//    withData(
+//      yList.zipWithIndex.map{case (value, index) =>
+//          Map("value" -> value, "index" -> index)
+//      }
+//    ).withLayers(
+//    Layer().
+//      mark(Line).
+//      encodeY("value", Quant).
+//      encodeX("index", Nom)
+//  )
 
-  plotsHandler.tell(Add(Plot("Y from File", plotY.html.pageHTML())), ActorRef.noSender)
+//  plotsHandler.tell(Add(Plot("Y from File", plotY.html.pageHTML())), ActorRef.noSender)
 
-  val plotV: LayerSpecBuilder = Vegas.layered("Country Pop").
-    withData(
-      vList.zipWithIndex.map{case (value, index) =>
-        Map("value" -> value, "index" -> index)
-      }
-    ).withLayers(
-    Layer().
-      mark(Line).
-      encodeY("value", Quant).
-      encodeX("index", Nom)
-  )
+//  val plotV: LayerSpecBuilder = Vegas.layered("Country Pop").
+//    withData(
+//      vList.zipWithIndex.map{case (value, index) =>
+//        Map("value" -> value, "index" -> index)
+//      }
+//    ).withLayers(
+//    Layer().
+//      mark(Line).
+//      encodeY("value", Quant).
+//      encodeX("index", Nom)
+//  )
 
-  plotsHandler.tell(Add(Plot("V from File", plotV.html.pageHTML())), ActorRef.noSender)
+//  plotsHandler.tell(Add(Plot("V from File", plotV.html.pageHTML())), ActorRef.noSender)
 
 //  val generatedY: List[Double] = Common.calculateY(as, bses, maxCount = 100)
 //
@@ -93,12 +93,7 @@ class LabConfig(file: File, arkcFile: File, yFile: File, vFile: File) {
 //
 //  plotsHandler.tell(Add(Plot("Y generated", plotYGenerated.html.pageHTML())), ActorRef.noSender)
 
-  val devFromFile: Double = variance(yList)
   println("================================================")
-
-  val mnkYWriter = new BufferedWriter(new FileWriter("debugMNK_Y.txt"))
-  Common.calculateY(coefs = List(a0, a1, a2, a3, 1.0, b1), n = 100, 3, 1, vList).foreach(x => mnkYWriter.write(s"$x\n"))
-  mnkYWriter.close()
 
   val additionalDebugWriter = new BufferedWriter(new FileWriter(s"debugC.txt"))
   additionalDebugWriter.write(s"p\tq\tMNK e\tdevMNK\tIKA MNK\tRMNK e\tdevRMNK\tIKA RMNK\n")
@@ -107,8 +102,10 @@ class LabConfig(file: File, arkcFile: File, yFile: File, vFile: File) {
     val newBses = bses.take(q + 1)
     val coefs: List[Double] = newAs ++ newBses
     val yForMNK = Common.calculateY(coefs = coefs, n = 100, p, q, vList)
+    val devFromFile: Double = variance(yForMNK)
+    val N: Int = math.min(yForMNK.length, vList.length)
     val mnkX: DenseMatrix[Double] = MNK.constructX(yForMNK, vList, p, q)
-    println(s"MNK debug: X size: ${mnkX.rows} x ${mnkX.cols}")
+//    println(s"MNK debug: X size: ${mnkX.rows} x ${mnkX.cols}")
     val mnk: DenseVector[Double] = MNK.mnk(mnkX, DenseVector(yForMNK.toArray))
 
 //    val debugWriter = new BufferedWriter(new FileWriter(s"debugX_${p}_$q.txt"))
@@ -124,11 +121,14 @@ class LabConfig(file: File, arkcFile: File, yFile: File, vFile: File) {
     val mnkData = mnk.data.toList
     val mnkAs = mnkData.take(p+1)
     val mnkBses = mnkData.takeRight(q)
-    println(s"Calculated teta [MNK]_${p}_$q ${mnkData.mkString("\t")}")
-    println(s"Coefs_${p}_$q ${coefs.mkString("\t")}")
+//    println(s"Calculated teta [MNK]_${p}_$q ${mnkData.mkString("\t")}")
+//    println(s"Coefs_${p}_$q ${coefs.mkString("\t")}")
     println(s"Calculated teta [MNK]_${p}_$q:")
 
     val generatedYMNK = Common.calculateY(mnkData, 100, p, q, vList)
+    val mnkYWriter = new BufferedWriter(new FileWriter(s"debugMNK_Y_${p}_$q.txt"))
+    generatedYMNK.foreach(x => mnkYWriter.write(s"$x\n"))
+    mnkYWriter.close()
 
     val mnkE = generatedYMNK.zip(yForMNK).foldLeft(0.0){case (zero, (a,b)) =>
         zero + math.pow(a-b, 2)
@@ -141,21 +141,24 @@ class LabConfig(file: File, arkcFile: File, yFile: File, vFile: File) {
     mnkBses.zipWithIndex.foreach{case (b, index) =>
       println(s"b${index+1}: $b")
     }
-
+    println(s"Сума квадратів похибок МНК_${p}_$q: $mnkE")
+    val devFromMNK: Double = variance(generatedYMNK)
+    println(s"${p}_$q:\t devFromFile: $devFromFile\tdevFromMNK: $devFromMNK\tВідношення: ${devFromMNK/devFromFile}")
+    val IKA_MNK = N * math.log(mnkE) + 2 * (p + q + 1)
+    println(s"IKA_MNK${p}_$q: $IKA_MNK")
     println("---------------------------------------------------------------------")
     val yDenseVector: DenseVector[Double] = DenseVector(yForMNK.toArray)
 
     val (rmnk, debug, rmnkEFFF, yVzhuhs) = RMNK.rmnk(yDenseVector, vDenseVector, p, q, yForMNK.length - 1)
 
 
-    val devFromRMNK: Double = variance(yVzhuhs)
-    val devFromMNK: Double = variance(generatedYMNK)
 
     println(s"Calculated teta [RMNK]_${p}_$q:")
     val generatedYRMNK = Common.calculateY(rmnk.data.toList, 100, p, q, vList)
     val rmnkE = generatedYRMNK.zip(yForMNK).foldLeft(0.0){case (zero, (a,b)) =>
       zero + math.pow(a-b, 2)
     }
+    val devFromRMNK: Double = variance(generatedYRMNK)
 
 
 
@@ -171,15 +174,13 @@ class LabConfig(file: File, arkcFile: File, yFile: File, vFile: File) {
       println(s"b${index+1}: $b")
     }
 
-    println(s"Сума похибок РМНК_${p}_$q: $rmnkE")
+    println(s"Сума квадратів похибок РМНК_${p}_$q: $rmnkE")
 
     println(s"${p}_$q:\t devFromFile: $devFromFile\tdevFromRMNK: $devFromRMNK\tВідношення: ${devFromRMNK/devFromFile}")
 
     val IKA_RMNK = N * math.log(rmnkE) + 2 * (p + q + 1)
-    val IKA_MNK = N * math.log(mnkE) + 2 * (p + q + 1)
 
     println(s"IKA_RMNK${p}_$q: $IKA_RMNK")
-    println(s"IKA_MNK${p}_$q: $IKA_MNK")
 
     val debugWriter2 = new BufferedWriter(new FileWriter(s"debugTeta_${p}_$q.txt"))
     debug.foreach{deb =>
